@@ -29,7 +29,7 @@ export default function Home() {
       <h2>Contact</h2>
       <p>
         Email:{" "}
-        <a href="mailto:minniemisspiggie@gmail.com">youremail@example.com</a>
+        <a href="mailto:hamlytics@gmail.com">hamlyticse@gmail.com</a>
       </p>
 
       <p style={{ fontSize: 12, opacity: 0.7, marginTop: 24 }}>
