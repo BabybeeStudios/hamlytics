@@ -24,13 +24,8 @@ export async function POST(req: Request) {
 
     const email = String(body?.email || "").trim() || undefined;
 
-    // 30 days token (change anytime)
     const token = jwt.sign(
-      {
-        pro: true,
-        email: email || undefined,
-        iat: Math.floor(Date.now() / 1000),
-      },
+      { pro: true, email: email || undefined, iat: Math.floor(Date.now() / 1000) },
       jwtSecret,
       { expiresIn: "30d" }
     );
