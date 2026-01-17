@@ -1,47 +1,84 @@
-// app/api/license/validate/route.ts
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 /**
- * TEMP / MVP LICENSE VALIDATION
- * - Lets you test Pro unlocking immediately with a Founder token.
- * - Later, we'll replace this with real Stripe subscription checks.
+ * CORS NOTE
+ * Chrome extensions trigger a preflight OPTIONS for JSON POST.
+ * We must:
+ * 1) return Access-Control-Allow-Origin
+ * 2) return Access-Control-Allow-Methods/Headers
+ * 3) implement OPTIONS handler
+ *
+ * SECURITY:
+ * - Ideally restrict to your extension ID origin(s)
+ * - You can add more IDs later if you publish a store version (ID will change)
  */
 
-export const runtime = "nodejs"; // keep this on Node for easier future Stripe integration
+// ✅ Put your CURRENT extension ID here:
+const EXTENSION_ID = "dgbihamapbcaengkhajjempfiijnbhfc";
 
-// ✅ Set your founder token(s) here:
+// Allowed origins (extension + local dev)
+const ALLOWED_ORIGINS = new Set<string>([
+  `chrome-extension://${EXTENSION_ID}`,
+  "http://localhost:3000",
+]);
+
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "";
+
+  // If origin isn't allowed, we still respond, but without allow-origin.
+  // The browser will block it (as intended).
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+// ✅ Founder tokens (temporary for testing)
 const VALID_TOKENS = new Set<string>([
   "HAMLYTICS-FOUNDERS-2026",
   "HAMLYTICS-PRO-TEST-1",
 ]);
+
+export async function OPTIONS(req: Request) {
+  // Preflight response
+  return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
+}
+
+export async function GET(req: Request) {
+  return NextResponse.json(
+    {
+      ok: true,
+      message:
+        "Hamlytics license endpoint is live. Send POST JSON { token: '...' } to validate.",
+    },
+    { status: 200, headers: corsHeaders(req) }
+  );
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
     const token = String(body?.token || "").trim();
 
-    if (!token) {
-      return NextResponse.json(
-        { ok: true, pro: false, reason: "missing_token" },
-        { status: 200 }
-      );
-    }
-
-    const pro = VALID_TOKENS.has(token);
+    const pro = token ? VALID_TOKENS.has(token) : false;
 
     return NextResponse.json(
       {
         ok: true,
         pro,
-        reason: pro ? "token_valid" : "token_invalid",
-        // You can return extra info later (tier, expiry, customerId, etc.)
+        reason: token ? (pro ? "token_valid" : "token_invalid") : "missing_token",
       },
-      { status: 200 }
+      { status: 200, headers: corsHeaders(req) }
     );
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, pro: false, error: String(e?.message || e) },
-      { status: 500 }
+      { status: 500, headers: corsHeaders(req) }
     );
   }
 }
