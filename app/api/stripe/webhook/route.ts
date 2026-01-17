@@ -24,17 +24,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
-  // MVP: we just acknowledge events.
-  // Later, you can store customer/subscription status in a DB if you want.
-  switch (event.type) {
-    case "checkout.session.completed":
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted":
-      break;
-    default:
-      break;
-  }
-
   return NextResponse.json({ ok: true }, { status: 200 });
 }
