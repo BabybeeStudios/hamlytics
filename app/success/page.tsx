@@ -1,83 +1,53 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function SuccessPage() {
-  const [status, setStatus] = useState<string>("Finalizing your Pro unlock…");
   const [token, setToken] = useState<string>("");
-
-  const sessionId = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    const params = new URLSearchParams(window.location.search);
-    return params.get("session_id") || "";
-  }, []);
+  const [err, setErr] = useState<string>("");
 
   useEffect(() => {
-    async function run() {
-      if (!sessionId) {
-        setStatus("Missing session_id. If you just paid, return to Stripe success page.");
-        return;
-      }
+    const params = new URLSearchParams(window.location.search);
+    const session_id = params.get("session_id");
+    if (!session_id) {
+      setErr("Missing session_id.");
+      return;
+    }
+
+    (async () => {
       try {
-        const r = await fetch("/api/license/issue", {
+        const r = await fetch("/api/license/from-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: sessionId }),
+          body: JSON.stringify({ session_id }),
         });
-        const j = await r.json();
-        if (!j?.ok) {
-          setStatus(j?.error || "Could not issue Pro token.");
-          return;
-        }
-        setToken(j.token);
-        setStatus("✅ Pro token issued! Copy this into the extension to unlock Pro.");
+        const data = await r.json();
+        if (!data?.ok || !data?.token) throw new Error(data?.error || "No token returned");
+        setToken(data.token);
       } catch (e: any) {
-        setStatus("Network error issuing token.");
+        setErr(e?.message || "Failed to generate token");
       }
-    }
-    run();
-  }, [sessionId]);
-
-  async function copy() {
-    if (!token) return;
-    await navigator.clipboard.writeText(token);
-    setStatus("Copied! Now paste it into the Hamlytics extension → Pro Token.");
-  }
+    })();
+  }, []);
 
   return (
-    <main style={{ padding: 40, fontFamily: "system-ui", maxWidth: 900, margin: "0 auto" }}>
-      <h1>Hamlytics Pro — Success 🎉</h1>
-      <p style={{ opacity: 0.85 }}>{status}</p>
+    <main style={{ padding: 24, fontFamily: "system-ui" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 900 }}>You’re Pro! 🎉🐹</h1>
 
-      <div style={{ marginTop: 18, border: "1px solid rgba(0,0,0,0.12)", borderRadius: 14, padding: 16 }}>
-        <div style={{ fontWeight: 800, marginBottom: 8 }}>Your Pro Token</div>
-        <textarea
-          value={token}
-          readOnly
-          style={{ width: "100%", height: 110, borderRadius: 10, padding: 10, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
-        />
-        <button onClick={copy} disabled={!token} style={btnPrimary}>
-          Copy Token
-        </button>
-        <p style={{ fontSize: 12, opacity: 0.7, marginTop: 10 }}>
-          Keep this token private. You can re-generate it anytime by visiting this page again from Stripe success.
-        </p>
-      </div>
-
-      <p style={{ marginTop: 20, fontSize: 12, opacity: 0.7 }}>
-        Not affiliated with TikTok.
-      </p>
+      {err ? (
+        <p style={{ color: "crimson" }}>{err}</p>
+      ) : token ? (
+        <>
+          <p>Copy this token and paste it into the extension’s Pro unlock box:</p>
+          <textarea
+            value={token}
+            readOnly
+            style={{ width: "100%", height: 140, padding: 12, borderRadius: 12 }}
+          />
+        </>
+      ) : (
+        <p>Generating your token…</p>
+      )}
     </main>
   );
 }
-
-const btnPrimary: React.CSSProperties = {
-  marginTop: 10,
-  padding: "10px 14px",
-  borderRadius: 12,
-  border: "none",
-  cursor: "pointer",
-  fontWeight: 800,
-  color: "white",
-  background: "linear-gradient(135deg, #ff4fa3, #a78bfa)",
-};
