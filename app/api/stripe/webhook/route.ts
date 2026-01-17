@@ -1,9 +1,9 @@
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20",
 });
 
@@ -12,20 +12,29 @@ export async function POST(req: Request) {
   const whsec = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!sig || !whsec) {
-    return NextResponse.json({ ok: false, error: "Missing webhook signature/secret." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Missing signature or webhook secret" }, { status: 400 });
   }
-
-  const rawBody = await req.text();
 
   let event: Stripe.Event;
+
   try {
+    const rawBody = await req.text();
     event = stripe.webhooks.constructEvent(rawBody, sig, whsec);
   } catch (err: any) {
-    return NextResponse.json({ ok: false, error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
+    return NextResponse.json({ ok: false, error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
-  // For now, we simply acknowledge. (Your validate endpoint checks Stripe directly.)
-  // You can add logging/analytics later.
-  // Events we expect: checkout.session.completed, customer.subscription.* , invoice.*
-  return NextResponse.json({ ok: true, received: event.type });
+  // MVP: we just acknowledge events.
+  // Later, you can store customer/subscription status in a DB if you want.
+  switch (event.type) {
+    case "checkout.session.completed":
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted":
+      break;
+    default:
+      break;
+  }
+
+  return NextResponse.json({ ok: true }, { status: 200 });
 }
