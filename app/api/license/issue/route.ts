@@ -1,40 +1,42 @@
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2024-06-20",
-});
-
-function signToken(payload: any) {
-  const secret = process.env.LICENSE_JWT_SECRET;
-  if (!secret) throw new Error("Missing LICENSE_JWT_SECRET");
-  // 180 days token; user can refresh token any time via success link
-  return jwt.sign(payload, secret, { expiresIn: "180d" });
-}
-
 export async function POST(req: Request) {
-  const { session_id } = await req.json().catch(() => ({}));
-  if (!session_id) return NextResponse.json({ ok: false, error: "Missing session_id." }, { status: 400 });
+  try {
+    const body = await req.json().catch(() => null);
 
-  const session = await stripe.checkout.sessions.retrieve(session_id);
+    const adminSecret = process.env.ADMIN_ISSUE_SECRET;
+    const jwtSecret = process.env.JWT_SECRET;
 
-  if (!session?.customer) {
-    return NextResponse.json({ ok: false, error: "No customer on session yet. Try again in a moment." }, { status: 400 });
+    if (!adminSecret || !jwtSecret) {
+      return NextResponse.json(
+        { ok: false, error: "Missing ADMIN_ISSUE_SECRET or JWT_SECRET" },
+        { status: 500 }
+      );
+    }
+
+    const provided = String(body?.adminSecret || "");
+    if (provided !== adminSecret) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const email = String(body?.email || "").trim() || undefined;
+
+    // 30 days token (change anytime)
+    const token = jwt.sign(
+      {
+        pro: true,
+        email: email || undefined,
+        iat: Math.floor(Date.now() / 1000),
+      },
+      jwtSecret,
+      { expiresIn: "30d" }
+    );
+
+    return NextResponse.json({ ok: true, token }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || "Failed" }, { status: 500 });
   }
-
-  // Ensure it’s a subscription checkout session
-  const customerId = String(session.customer);
-  const subscriptionId = session.subscription ? String(session.subscription) : null;
-
-  const token = signToken({
-    v: 1,
-    customerId,
-    subscriptionId,
-    createdAt: Date.now(),
-  });
-
-  return NextResponse.json({ ok: true, token });
 }
