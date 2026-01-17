@@ -1,41 +1,47 @@
-import Stripe from "stripe";
+// app/api/license/validate/route.ts
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
-export const runtime = "nodejs";
+/**
+ * TEMP / MVP LICENSE VALIDATION
+ * - Lets you test Pro unlocking immediately with a Founder token.
+ * - Later, we'll replace this with real Stripe subscription checks.
+ */
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2024-06-20",
-});
+export const runtime = "nodejs"; // keep this on Node for easier future Stripe integration
 
-function verifyToken(token: string): { customerId: string } | null {
-  const secret = process.env.LICENSE_JWT_SECRET;
-  if (!secret) throw new Error("Missing LICENSE_JWT_SECRET");
-  try {
-    const decoded: any = jwt.verify(token, secret);
-    if (!decoded?.customerId) return null;
-    return { customerId: String(decoded.customerId) };
-  } catch {
-    return null;
-  }
-}
+// ✅ Set your founder token(s) here:
+const VALID_TOKENS = new Set<string>([
+  "HAMLYTICS-FOUNDERS-2026",
+  "HAMLYTICS-PRO-TEST-1",
+]);
 
 export async function POST(req: Request) {
-  const { token } = await req.json().catch(() => ({}));
-  if (!token) return NextResponse.json({ ok: false, pro: false, error: "Missing token." }, { status: 400 });
+  try {
+    const body = await req.json().catch(() => null);
+    const token = String(body?.token || "").trim();
 
-  const v = verifyToken(token);
-  if (!v) return NextResponse.json({ ok: true, pro: false });
+    if (!token) {
+      return NextResponse.json(
+        { ok: true, pro: false, reason: "missing_token" },
+        { status: 200 }
+      );
+    }
 
-  const subs = await stripe.subscriptions.list({
-    customer: v.customerId,
-    status: "all",
-    limit: 10,
-  });
+    const pro = VALID_TOKENS.has(token);
 
-  const active = subs.data.some((s) =>
-    ["active", "trialing"].includes(s.status)
-  );
-
-  return NextResponse.json({ ok: true, pro: active });
+    return NextResponse.json(
+      {
+        ok: true,
+        pro,
+        reason: pro ? "token_valid" : "token_invalid",
+        // You can return extra info later (tier, expiry, customerId, etc.)
+      },
+      { status: 200 }
+    );
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, pro: false, error: String(e?.message || e) },
+      { status: 500 }
+    );
+  }
 }
