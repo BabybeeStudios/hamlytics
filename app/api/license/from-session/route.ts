@@ -22,30 +22,19 @@ export async function POST(req: Request) {
       expand: ["subscription", "customer"],
     });
 
-    // Basic safety checks
     if (session.mode !== "subscription") {
       return NextResponse.json({ ok: false, error: "Not a subscription session" }, { status: 400 });
     }
 
     const customerId =
-      typeof session.customer === "string"
-        ? session.customer
-        : session.customer?.id;
+      typeof session.customer === "string" ? session.customer : session.customer?.id;
 
     const email = session.customer_details?.email || session.customer_email || undefined;
 
-    if (!customerId) {
-      return NextResponse.json({ ok: false, error: "No customer on session" }, { status: 400 });
-    }
+    if (!customerId) return NextResponse.json({ ok: false, error: "No customer on session" }, { status: 400 });
 
-    // Issue a Pro token (30d here; you can change to longer)
     const token = jwt.sign(
-      {
-        pro: true,
-        sub: customerId,
-        email,
-        iat: Math.floor(Date.now() / 1000),
-      },
+      { pro: true, sub: customerId, email, iat: Math.floor(Date.now() / 1000) },
       jwtSecret,
       { expiresIn: "30d" }
     );
