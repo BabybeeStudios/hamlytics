@@ -1,10 +1,9 @@
 "use client";
-
 import { useEffect, useState } from "react";
 
 export default function SuccessPage() {
-  const [token, setToken] = useState<string>("");
-  const [err, setErr] = useState<string>("");
+  const [token, setToken] = useState("");
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -38,12 +37,8 @@ export default function SuccessPage() {
         <p style={{ color: "crimson" }}>{err}</p>
       ) : token ? (
         <>
-          <p>Copy this token and paste it into the extension’s Pro unlock box:</p>
-          <textarea
-            value={token}
-            readOnly
-            style={{ width: "100%", height: 140, padding: 12, borderRadius: 12 }}
-          />
+          <p>Copy this token and paste it into the extension:</p>
+          <textarea value={token} readOnly style={{ width: "100%", height: 140, padding: 12, borderRadius: 12 }} />
         </>
       ) : (
         <p>Generating your token…</p>
