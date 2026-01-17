@@ -10,15 +10,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const plan = String(body?.plan || "monthly"); // "monthly" | "yearly"
+    const plan = String(body?.plan || "monthly");
 
     const appBase = process.env.APP_BASE_URL;
     if (!appBase) return NextResponse.json({ ok: false, error: "APP_BASE_URL missing" }, { status: 500 });
 
     const priceId =
-      plan === "yearly"
-        ? process.env.STRIPE_PRICE_ID_YEARLY
-        : process.env.STRIPE_PRICE_ID_MONTHLY;
+      plan === "yearly" ? process.env.STRIPE_PRICE_YEARLY : process.env.STRIPE_PRICE_MONTHLY;
 
     if (!priceId) {
       return NextResponse.json({ ok: false, error: "Missing Stripe price ID env var" }, { status: 500 });
