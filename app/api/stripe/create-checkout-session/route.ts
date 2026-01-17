@@ -1,35 +1,39 @@
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+export const runtime = "nodejs";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-06-20",
 });
 
 export async function POST(req: Request) {
-  const form = await req.formData();
-  const plan = String(form.get("plan") || "monthly");
+  try {
+    const body = await req.json().catch(() => ({}));
+    const plan = String(body?.plan || "monthly"); // "monthly" | "yearly"
 
-  const price =
-    plan === "yearly"
-      ? process.env.STRIPE_PRICE_YEARLY
-      : process.env.STRIPE_PRICE_MONTHLY;
+    const appBase = process.env.APP_BASE_URL;
+    if (!appBase) return NextResponse.json({ ok: false, error: "APP_BASE_URL missing" }, { status: 500 });
 
-  if (!price) {
-    return NextResponse.json({ ok: false, error: "Missing Stripe price env var." }, { status: 500 });
+    const priceId =
+      plan === "yearly"
+        ? process.env.STRIPE_PRICE_ID_YEARLY
+        : process.env.STRIPE_PRICE_ID_MONTHLY;
+
+    if (!priceId) {
+      return NextResponse.json({ ok: false, error: "Missing Stripe price ID env var" }, { status: 500 });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
+      success_url: `${appBase}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appBase}/cancel`,
+    });
+
+    return NextResponse.json({ ok: true, url: session.url }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || "Failed" }, { status: 500 });
   }
-
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ ok: false, error: "Missing NEXT_PUBLIC_APP_URL." }, { status: 500 });
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price, quantity: 1 }],
-    success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/pricing`,
-    allow_promotion_codes: true,
-  });
-
-  return NextResponse.redirect(session.url!, 303);
 }
