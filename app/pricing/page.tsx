@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 
 export default function PricingPage() {
@@ -29,26 +28,16 @@ export default function PricingPage() {
       <p>Unlock deep scan + comparison side panel.</p>
 
       <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-        <button
-          onClick={() => go("monthly")}
-          disabled={!!loading}
-          style={{ padding: "10px 14px", borderRadius: 12, fontWeight: 800 }}
-        >
+        <button onClick={() => go("monthly")} disabled={!!loading}
+          style={{ padding: "10px 14px", borderRadius: 12, fontWeight: 800 }}>
           {loading === "monthly" ? "Loading…" : "Go Pro Monthly"}
         </button>
 
-        <button
-          onClick={() => go("yearly")}
-          disabled={!!loading}
-          style={{ padding: "10px 14px", borderRadius: 12, fontWeight: 800 }}
-        >
+        <button onClick={() => go("yearly")} disabled={!!loading}
+          style={{ padding: "10px 14px", borderRadius: 12, fontWeight: 800 }}>
           {loading === "yearly" ? "Loading…" : "Go Pro Yearly (discount)"}
         </button>
       </div>
-
-      <p style={{ marginTop: 18, opacity: 0.8 }}>
-        After checkout, you’ll get a Pro token to paste into the extension.
-      </p>
     </main>
   );
 }
