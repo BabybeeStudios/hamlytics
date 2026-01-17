@@ -1,37 +1,49 @@
-import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2024-06-20",
 });
 
+function required(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env var: ${name}`);
+  return v;
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const plan = String(body?.plan || "monthly");
+    const { plan } = await req.json().catch(() => ({}));
+    const APP_URL = required("APP_URL");
 
-    const appBase = process.env.APP_BASE_URL;
-    if (!appBase) return NextResponse.json({ ok: false, error: "APP_BASE_URL missing" }, { status: 500 });
+    // ✅ Put your Stripe Price IDs here:
+    const PRICE_MONTHLY = required("STRIPE_PRICE_MONTHLY");
+    const PRICE_YEARLY = required("STRIPE_PRICE_YEARLY");
 
-    const priceId =
-      plan === "yearly" ? process.env.STRIPE_PRICE_YEARLY : process.env.STRIPE_PRICE_MONTHLY;
+    const price =
+      plan === "yearly" ? PRICE_YEARLY :
+      plan === "monthly" ? PRICE_MONTHLY :
+      null;
 
-    if (!priceId) {
-      return NextResponse.json({ ok: false, error: "Missing Stripe price ID env var" }, { status: 500 });
+    if (!price) {
+      return Response.json({ ok: false, error: "Invalid plan" }, { status: 400 });
     }
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/pricing?canceled=1`,
+      metadata: { plan: String(plan || "") },
       allow_promotion_codes: true,
-      success_url: `${appBase}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appBase}/cancel`,
     });
 
-    return NextResponse.json({ ok: true, url: session.url }, { status: 200 });
+    return Response.json({ ok: true, url: session.url });
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message || "Failed" }, { status: 500 });
+    return Response.json(
+      { ok: false, error: e?.message || String(e) },
+      { status: 500 }
+    );
   }
 }
