@@ -4,9 +4,6 @@ import jwt from "jsonwebtoken";
 export const runtime = "nodejs";
 
 function corsHeaders(origin?: string) {
-  // You can lock this down later to your extension origin:
-  // const allowed = "chrome-extension://YOUR_EXTENSION_ID";
-  // const allowOrigin = origin === allowed ? origin : "null";
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -16,7 +13,10 @@ function corsHeaders(origin?: string) {
 }
 
 export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: corsHeaders(req.headers.get("origin") || undefined) });
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(req.headers.get("origin") || undefined),
+  });
 }
 
 export async function POST(req: Request) {
@@ -41,10 +41,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Token payload shape we use:
-    // { pro: true, sub: "stripe_customer_id"?, email? }
     const payload = jwt.verify(token, secret) as any;
-
     const pro = !!payload?.pro;
 
     return NextResponse.json(
