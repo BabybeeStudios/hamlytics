@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hamlytics Panel</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="brand">
+          <div class="logo">
+            <div class="logoInner">🐹</div>
+          </div>
+          <div class="brandText">
+            <div class="titleRow">
+              <div class="title">Hamlytics</div>
+              <div id="badge" class="badge">FREE</div>
+            </div>
+            <div class="subtitle">Side Panel Compare (Pro)</div>
+          </div>
+        </div>
+
+        <div class="statusRow">
+          <div id="dot" class="dot"></div>
+          <p id="status" class="status">Open a TikTok profile and click Scan.</p>
+        </div>
+
+        <div class="controls">
+          <button id="scanBtn" class="btn primary">Scan Current</button>
+          <button id="saveABtn" class="btn">Save as A</button>
+          <button id="compareBtn" class="btn" disabled>Compare</button>
+          <button id="clearABtn" class="btn ghost" disabled>Clear A</button>
+        </div>
+
+        <div class="toggles">
+          <label class="toggle">
+            <input id="deepScanToggle" type="checkbox" />
+            <span class="toggle-ui"></span>
+            <span class="toggle-text">Deep Scan (full stats)</span>
+          </label>
+
+          <div class="rangeRow">
+            <div class="rangeLabel">
+              Deep limit: <b id="deepLimitLabel">12</b>
+            </div>
+            <input id="deepLimit" type="range" min="1" max="20" value="12" />
+          </div>
+        </div>
+      </header>
+
+      <!-- Lock overlay (visible to free users) -->
+      <section id="lock" class="lock hidden">
+        <div class="lockCard">
+          <div class="lockTitle">🐹 Pro Feature</div>
+          <div class="lockText">
+            The side panel + comparison is included in <b>Pro</b>.
+            You can still see the layout here, but buttons are locked.
+          </div>
+
+          <div class="lockBtns" style="display:flex; gap:10px; margin-top:10px;">
+            <button id="goProBtn" class="btn primary" style="flex:1;">Go Pro 💖</button>
+            <button id="refreshProBtn" class="btn" style="flex:1;">Refresh Pro</button>
+          </div>
+
+          <div class="lockNote">
+            After subscribing, enter your Pro token in the popup (Upgrade section), then hit <b>Refresh Pro</b>.
+          </div>
+        </div>
+      </section>
+
+      <main class="main">
+        <section id="summary" class="card hidden"></section>
+
+        <section class="card">
+          <div class="sectionHeader">
+            <div class="sectionTitle">Compare</div>
+            <div id="compareHint" class="note hidden"></div>
+          </div>
+
+          <!-- panel.js will fill this -->
+          <div id="compareCard" class="compare hidden"></div>
+
+          <div class="smallNote">
+            Workflow: Scan Current → Save as A → open another profile → Scan Current → Compare
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="sectionHeader">
+            <div class="sectionTitle">Latest Results</div>
+            <div id="resultsNote" class="note"></div>
+          </div>
+          <ul id="results" class="resultsList"></ul>
+        </section>
+
+        <footer class="footer">
+          Engine: <span id="engine">—</span>
+        </footer>
+      </main>
+    </div>
+
+    <script src="panel.js"></script>
+  </body>
+</html>
