@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Hamlytics",
+  "version": "1.0.0",
+  "description": "TikTok profile analyzer (views + Pro deep stats).",
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage",
+    "downloads",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://www.tiktok.com/*"
+  ],
+  "background": {
+    "service_worker": "src/service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.tiktok.com/@*"],
+      "js": ["src/content_script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "src/panel.html"
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}
