@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hamlytics</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">
+        <div class="logo"><div class="logoInner">🐹</div></div>
+        <div>
+          <div class="title">
+            Hamlytics
+            <span id="planBadge" class="badge">FREE</span>
+          </div>
+          <div class="subtitle">TikTok profile scan • views + Pro deep stats</div>
+        </div>
+      </div>
+
+      <div class="statusRow">
+        <div id="dot" class="dot"></div>
+        <p id="status">Open a TikTok profile, then click Scan.</p>
+      </div>
+
+      <div class="controls">
+        <button id="scanBtn" class="btn primary">Scan (views)</button>
+        <button id="rescanBtn" class="btn ghost" disabled>Rescan</button>
+        <button id="openPanelBtn" class="btn">Side Panel (Pro)</button>
+      </div>
+
+      <div class="toggles">
+        <label class="toggle">
+          <input id="deepScanToggle" type="checkbox" />
+          <span class="toggle-ui"></span>
+          <span class="toggle-text">Deep Scan (Pro: likes + comments)</span>
+        </label>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <div style="font-weight:900;">Scan limit</div>
+            <div style="font-weight:900;"><span id="scanLimitLabel">20</span></div>
+          </div>
+          <div style="margin-top:8px;">
+            <input id="scanLimit" type="range" min="5" max="50" step="1" value="20" style="width:100%;" />
+          </div>
+          <div style="margin-top:6px;opacity:.75;font-size:11px;">
+            Controls how many videos to target when scanning (TikTok still needs scrolling to load more).
+          </div>
+        </div>
+
+        <label class="toggle">
+          <input id="top20Toggle" type="checkbox" />
+          <span class="toggle-ui"></span>
+          <span class="toggle-text">Show Top 20 by views</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="hint" class="hint hidden"></div>
+
+    <div id="summary" class="card hidden"></div>
+
+    <!-- ✅ NEW: pills row above Results -->
+    <div id="profilePills" class="pillRow hidden"></div>
+
+    <div class="resultsHeader">
+      <div class="resultsTitle">Results</div>
+      <div id="resultsNote" class="resultsNote"></div>
+    </div>
+
+    <ul id="results" class="resultsList"></ul>
+
+    <div class="controls" style="margin-top:10px;">
+      <button id="exportBtn" class="btn" disabled>Export CSV</button>
+      <button id="exportJsonBtn" class="btn" disabled>Export JSON</button>
+      <button id="copyBtn" class="btn" disabled>Copy Summary</button>
+    </div>
+
+    <div id="upgradeNudge" class="card hidden">
+      <div style="font-weight:900;">Unlock Hamlytics Pro 🔒🐹</div>
+      <div style="margin-top:6px; opacity:.85;">
+        Deep Scan (likes/comments) + Side Panel compare + higher limits.
+      </div>
+      <button id="goProBtn" class="btn primary" style="margin-top:10px; width:100%;">
+        Upgrade to Pro 💖
+      </button>
+    </div>
+
+    <div class="footer">🐹 Hamlytics</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
