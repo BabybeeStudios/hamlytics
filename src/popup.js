@@ -242,46 +242,49 @@ Avg engagement: ${safePct(stats.avgEng)}
  * So we use callback-style chrome.tabs.query + open immediately.
  */
 function openSidePanelUserGesture() {
-  // (Optional) If not Pro, nudge to upgrade (but do NOT await pro check before open)
-  chrome.runtime.sendMessage({ type: "GET_PRO_STATUS", forceRefresh: false }, (st) => {
-    const isPro = !!st?.pro;
-    if (!isPro) {
-      setStatus("Side panel is Pro-only 🔒 (upgrade to unlock) 🐹💖", null);
-      show("upgradeNudge", true);
+  // Always open the panel so Free users can preview the layout.
+  // The panel itself will show the Pro lock overlay when not Pro.
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tab = tabs && tabs[0];
+    if (!tab?.id) {
+      setStatus("Couldn’t find active tab.", "bad");
       return;
     }
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
-      if (!tab?.id) {
-        setStatus("Couldn’t find active tab.", "bad");
-        return;
-      }
+    if (!chrome.sidePanel?.setOptions || !chrome.sidePanel?.open) {
+      setStatus("Side panel API not available (or unsupported in this Chrome).", "bad");
+      return;
+    }
 
-      // Ensure path is set before open
-      if (chrome.sidePanel?.setOptions) {
-        chrome.sidePanel.setOptions({ tabId: tab.id, path: "src/panel.html", enabled: true }, () => {
+    chrome.sidePanel.setOptions(
+      { tabId: tab.id, path: "src/panel.html", enabled: true },
+      () => {
+        if (chrome.runtime.lastError) {
+          setStatus(chrome.runtime.lastError.message || "Side panel setOptions failed.", "bad");
+          return;
+        }
+
+        chrome.sidePanel.open({ tabId: tab.id }, () => {
           if (chrome.runtime.lastError) {
-            setStatus(chrome.runtime.lastError.message || "Side panel setOptions failed.", "bad");
+            setStatus(chrome.runtime.lastError.message || "Side panel open failed.", "bad");
             return;
           }
 
-          if (chrome.sidePanel?.open) {
-            chrome.sidePanel.open({ tabId: tab.id }, () => {
-              if (chrome.runtime.lastError) {
-                setStatus(chrome.runtime.lastError.message || "Side panel open failed.", "bad");
-              } else {
-                setStatus("Side panel opened ✅", "ok");
-              }
-            });
-          } else {
-            setStatus("Side panel not supported in this Chrome version.", "bad");
-          }
+          // Now (after opening) check Pro and show a friendly nudge if they're Free
+          chrome.runtime.sendMessage({ type: "GET_PRO_STATUS", forceRefresh: false }, (st) => {
+            const isPro = !!st?.pro;
+            if (!isPro) {
+              setStatus("Preview opened ✨ Side panel features are Pro 🔒🐹", null);
+              show("upgradeNudge", true);
+            } else {
+              setStatus("Side panel opened ✅", "ok");
+              show("upgradeNudge", false);
+            }
+          });
         });
-      } else {
-        setStatus("Side panel API not available.", "bad");
       }
-    });
+    );
   });
 }
 
