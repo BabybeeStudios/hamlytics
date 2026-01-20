@@ -6,7 +6,12 @@
    Adds: Failsafe guards so popup can’t crash
    ================================ */
 
+console.log("🐹 POPUP VERSION = " + new Date().toISOString());
 console.log("🐹 popup.js loaded");
+console.log("🐹 POPUP.JS MARKER vTokenBoxTest 001");
+
+// 🔥 Visual marker: if you see this outline, you are running THIS popup.js
+try { document.body.style.outline = "6px solid hotpink"; } catch {}
 
 // ✅ set this to your deployed site
 const APP_BASE_URL = "https://hamlytics-9x5r.vercel.app";
@@ -16,10 +21,6 @@ let lastData = null;
 /* ================================
    FAILSAFE GUARDS (anti-crash)
    ================================ */
-
-// ✅ Always have a no-op fallback so calls never crash
-// (We replace this with the real function below.)
-window.setDeepScanEnabled = window.setDeepScanEnabled || function () {};
 
 // Safe DOM getter (prevents "cannot read property of null" crashes)
 function $(id) {
@@ -78,10 +79,14 @@ function safePct(x) {
   return (x * 100).toFixed(2) + "%";
 }
 
-/* ✅ REAL implementation (replaces no-op). MUST be top-level. */
-window.setDeepScanEnabled = function setDeepScanEnabled(enabled) {
+/* ✅ Deep Scan lock (Pro only) */
+function setDeepScanEnabled(enabled) {
   const t = $("deepScanToggle");
   const r = $("scanLimit");
+  const lbl = document
+    .querySelector("#deepScanToggle")
+    ?.closest("label.toggle")
+    ?.querySelector(".toggle-text");
 
   const tooltip = enabled ? "" : "Unlock with Pro! 💖";
 
@@ -95,7 +100,9 @@ window.setDeepScanEnabled = function setDeepScanEnabled(enabled) {
     r.disabled = !enabled;
     r.title = tooltip;
   }
-};
+
+  if (lbl) lbl.title = tooltip;
+}
 
 /* ---------- Chrome messaging ---------- */
 async function getActiveTab() {
@@ -124,12 +131,25 @@ function computeStats(videos) {
   const v = videos || [];
 
   const viewNums = v.map(x => x.views).filter(x => typeof x === "number");
-  const avgViews = viewNums.length ? Math.round(viewNums.reduce((a, b) => a + b, 0) / viewNums.length) : null;
+  const avgViews = viewNums.length
+    ? Math.round(viewNums.reduce((a, b) => a + b, 0) / viewNums.length)
+    : null;
   const maxViews = viewNums.length ? Math.max(...viewNums) : null;
 
-  // NOTE: Engagement isn't precomputed in your current engine (unless you add it later).
-  const engNums = v.map(x => x.engagement).filter(x => typeof x === "number");
-  const avgEng = engNums.length ? engNums.reduce((a, b) => a + b, 0) / engNums.length : null;
+  // Engagement ratio when likes/comments exist:
+  const engNums = v
+    .map(x => {
+      if (typeof x.views !== "number" || x.views <= 0) return null;
+      if (typeof x.likes !== "number" && typeof x.comments !== "number") return null;
+      const likes = (typeof x.likes === "number") ? x.likes : 0;
+      const comments = (typeof x.comments === "number") ? x.comments : 0;
+      return (likes + comments) / x.views; // 0..1
+    })
+    .filter(x => typeof x === "number");
+
+  const avgEng = engNums.length
+    ? engNums.reduce((a, b) => a + b, 0) / engNums.length
+    : null;
 
   return { total: v.length, avgViews, maxViews, avgEng };
 }
@@ -154,6 +174,7 @@ function render(data) {
   const allVideos = data.videos || [];
   const shownVideos = applyTop20ByViews(allVideos, !!toggleOn);
   const stats = computeStats(allVideos);
+  const followers = (typeof data.followers === "number") ? data.followers : null;
 
   summaryEl.innerHTML = `
     <div><b>Profile:</b> ${data.profileHandle || "—"}</div>
@@ -162,7 +183,7 @@ function render(data) {
       <span class="pill pink">Avg views: ${formatNum(stats.avgViews)}</span>
       <span class="pill lav">Top views: ${formatNum(stats.maxViews)}</span>
       <span class="pill mint">Avg eng: ${stats.avgEng == null ? "Pro (Deep Scan)" : safePct(stats.avgEng)}</span>
-      <span class="pill sun">Followers: ${formatNum(data.followers)}</span>
+      <span class="pill sun">Followers: ${formatNum(followers)}</span>
     </div>
   `;
   show("summary", true);
@@ -199,24 +220,24 @@ function render(data) {
     show("hint", false);
   }
 
-  $("exportBtn").disabled = false;
-  $("exportJsonBtn").disabled = false;
-  $("copyBtn").disabled = false;
-  $("rescanBtn").disabled = false;
+  $("exportBtn") && ($("exportBtn").disabled = false);
+  $("exportJsonBtn") && ($("exportJsonBtn").disabled = false);
+  $("copyBtn") && ($("copyBtn").disabled = false);
+  $("rescanBtn") && ($("rescanBtn").disabled = false);
 }
 
 /* ---------- Scan ---------- */
 async function scanProfile({ forceFresh }) {
-  $("exportBtn").disabled = true;
-  $("exportJsonBtn").disabled = true;
-  $("copyBtn").disabled = true;
-  $("rescanBtn").disabled = true;
+  $("exportBtn") && ($("exportBtn").disabled = true);
+  $("exportJsonBtn") && ($("exportJsonBtn").disabled = true);
+  $("copyBtn") && ($("copyBtn").disabled = true);
+  $("rescanBtn") && ($("rescanBtn").disabled = true);
 
   show("summary", false);
   show("hint", false);
 
-  $("results").innerHTML = "";
-  $("resultsNote").textContent = "";
+  if ($("results")) $("results").innerHTML = "";
+  if ($("resultsNote")) $("resultsNote").textContent = "";
 
   const tab = await getActiveTab();
   if (!tab?.id || !tab.url?.includes("tiktok.com/@")) {
@@ -334,9 +355,11 @@ async function initPopup() {
   if (badge) badge.textContent = st.pro ? "PRO" : "FREE";
 
   show("upgradeNudge", !st.pro);
+  show("tokenBox", !st.pro);
+  setDeepScanEnabled(!!st.pro);
 
-  // ✅ Always call via window. so it never throws
-  window.setDeepScanEnabled(!!st.pro);
+  console.log("🐹 initPopup proStatus:", st);
+  console.log("🐹 tokenBox exists?", !!$("tokenBox"));
 
   const scanLimit = $("scanLimit");
   const scanLimitLabel = $("scanLimitLabel");
@@ -356,6 +379,37 @@ async function initPopup() {
 
   $("top20Toggle")?.addEventListener("change", guard(() => { if (lastData) render(lastData); }, "Toggle"));
 
+  const saveBtn = $("saveTokenBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", guard(async () => {
+      const input = $("proToken");
+      const token = input?.value?.trim();
+
+      if (!token) {
+        setStatus("Please paste your Pro token.", "bad");
+        return;
+      }
+
+      await chrome.storage.local.set({ proToken: token });
+      setStatus("Token saved. Checking Pro status… 🐹", "loading");
+
+      const st2 = await getProStatus(true);
+
+      if (st2.pro === true) {
+        setStatus("Pro unlocked! 🎉🐹", "ok");
+        show("upgradeNudge", false);
+        show("tokenBox", false);
+        setDeepScanEnabled(true);
+
+        const badge2 = $("planBadge");
+        if (badge2) badge2.textContent = "PRO";
+      } else {
+        setStatus("Token invalid or not active yet.", "bad");
+        show("tokenBox", true); // keep visible so they can try again
+      }
+    }, "Save token"));
+  }
+
   const openPanelBtn = $("openPanelBtn");
   if (openPanelBtn) openPanelBtn.onclick = guard(openSidePanelUserGesture, "Open side panel");
 
@@ -365,17 +419,5 @@ async function initPopup() {
 
   setStatus("Open a TikTok profile page, then click Scan. 🐹", null);
 }
-
-chrome.storage?.onChanged?.addListener((changes, area) => {
-  if (area !== "local") return;
-  if (changes.proToken || changes.proCache) {
-    getProStatus(true).then((st) => {
-      window.setDeepScanEnabled(!!st.pro);
-      const badge = $("planBadge");
-      if (badge) badge.textContent = st.pro ? "PRO" : "FREE";
-      show("upgradeNudge", !st.pro);
-    });
-  }
-});
 
 document.addEventListener("DOMContentLoaded", guard(initPopup, "Init"));
