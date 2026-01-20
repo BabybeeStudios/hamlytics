@@ -23,14 +23,14 @@
   </div>
 
   <h2>Data We Collect</h2>
-  <p><b>Hamlytics does not collect or transmit personal data to the developer’s servers.</b> The extension processes data locally in your browser.</p>
+  <p><b>Hamlytics processes TikTok page data locally in your browser.</b> The extension does not transmit TikTok page content to the developer’s servers. If you enter a Pro token, the token is sent to a license validation endpoint to confirm Pro status.</p>
 
   <div class="card">
     <h2>What the Extension Accesses</h2>
     <ul>
       <li><b>Website content (TikTok pages you open):</b> The extension reads publicly visible profile/video metrics (e.g., views, and in Pro mode likes/comments if available) to generate analytics.</li>
       <li><b>User activity:</b> The extension responds to your clicks (e.g., Scan, Export). It does not perform keystroke logging or tracking across sites.</li>
-      <li><b>Authentication information (Pro token):</b> If you purchase Pro and paste a Pro token, it is stored locally in <code>chrome.storage</code> on your device to unlock Pro features.</li>
+      <li><b>Authentication information (Pro token):</b> If you purchase Pro and paste a Pro token, it is stored locally in <code>chrome.storage</code> on your device to unlock Pro features. When you activate Pro, the token is sent to the license validation endpoint (<code>/api/license/validate</code>) to verify your Pro status.</li>
     </ul>
   </div>
 
@@ -42,7 +42,7 @@
   </ul>
 
   <h2>Data Sharing</h2>
-  <p>We do not sell, rent, or share user data with third parties. Hamlytics does not transmit personal data to the developer’s servers.</p>
+  <p>We do not sell, rent, or share user data with third parties. Hamlytics does not transmit TikTok page content to the developer’s servers. The only network request from the extension is optional Pro token license validation when you choose to activate Pro.</p>
 
   <h2>Data Storage & Retention</h2>
   <ul>
