@@ -28,7 +28,7 @@
       <div class="controls">
         <button id="scanBtn" class="btn primary">Scan (views)</button>
         <button id="rescanBtn" class="btn ghost" disabled>Rescan</button>
-        <button id="openPanelBtn" class="btn">Side Panel (Pro)</button>
+        <button id="openPanelBtn" class="btn">Side Panel (Preview)</button>
       </div>
 
       <div class="toggles">
@@ -63,7 +63,7 @@
 
     <div id="summary" class="card hidden"></div>
 
-    <!-- ✅ NEW: pills row above Results -->
+    <!-- ✅ Pills row above Results -->
     <div id="profilePills" class="pillRow hidden"></div>
 
     <div class="resultsHeader">
@@ -86,6 +86,28 @@
       </div>
       <button id="goProBtn" class="btn primary" style="margin-top:10px; width:100%;">
         Upgrade to Pro 💖
+      </button>
+    </div>
+
+    <div id="tokenBox" class="card hidden">
+      <div style="font-weight:900;">Activate Pro Token</div>
+      <div style="margin-top:6px; opacity:.85;">
+        After purchase, paste your token here to unlock Pro features.
+      </div>
+
+      <input
+        id="proToken"
+        type="text"
+        placeholder="Paste your Pro token"
+        spellcheck="false"
+        autocapitalize="none"
+        autocorrect="off"
+        autocomplete="off"
+        style="width:100%; margin-top:10px; padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,0.08);"
+      />
+
+      <button id="saveTokenBtn" class="btn" style="margin-top:10px; width:100%;">
+        Activate Pro
       </button>
     </div>
 
