@@ -6,13 +6,6 @@
    Adds: Failsafe guards so popup can’t crash
    ================================ */
 
-console.log("🐹 POPUP VERSION = " + new Date().toISOString());
-console.log("🐹 popup.js loaded");
-console.log("🐹 POPUP.JS MARKER vTokenBoxTest 001");
-
-// 🔥 Visual marker: if you see this outline, you are running THIS popup.js
-try { document.body.style.outline = "6px solid hotpink"; } catch {}
-
 // ✅ set this to your deployed site
 const APP_BASE_URL = "https://hamlytics-9x5r.vercel.app";
 
